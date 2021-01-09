@@ -1,0 +1,10 @@
+love.graphics.setDefaultFilter("nearest", "nearest")
+
+grass = love.graphics.newImage("tile/grass.png")
+underbrush = love.graphics.newImage("tile/underbrush.png")
+sand = love.graphics.newImage("tile/sand.png")
+water = love.graphics.newImage("tile/water.png")
+forest_tree = love.graphics.newImage("tile/forest_tree.png")
+jungle_tree = love.graphics.newImage("tile/jungle_tree.png")
+berry_bush = love.graphics.newImage("tile/berry_bush.png")
+cim = love.graphics.newImage("tile/cim.png")
