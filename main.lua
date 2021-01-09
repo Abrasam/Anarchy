@@ -15,7 +15,7 @@ function love.keypressed(key)
 end
 
 function love.wheelmoved(x, y)
-	TILE_SIZE = math.min(128, math.max(8,TILE_SIZE + 4*y))
+	TILE_SIZE = math.min(128, math.max(16,TILE_SIZE + 4*y))
 	
 end
 
@@ -23,7 +23,7 @@ function love.mousepressed(x,y,button)
 end
 
 function love.update(dt)
-	local move = love.keyboard.isDown("lshift") and 10 or 1
+	local move = love.keyboard.isDown("lshift") and 5 or 1
 	if love.keyboard.isDown("w") then
 		tranY = tranY - move
 	end
