@@ -1,4 +1,5 @@
 require "entity"
+require "component"
 
 MAP_SIZE = 1000
 HEIGHT_SCALE = 100
@@ -7,11 +8,15 @@ MOISTURE_SCALE = 200
 TEMP_SCALE = 50
 FOOD_SCALE = 5
 TILE_SIZE = 64
+STEP_SIZE = 1
 
 World = {}
 
 function World:new(seed)
-	local fields = {map=nil, t=0} --just there for documentation really
+	local fields = {biomeMap={}, entityMap={}, systems={MoveableSystem:new(),PathfindSystem:new(),RandomWalkSystem:new()}, components={}, t=0}
+	for _,component in ipairs(components) do
+		fields.components[component] = {}
+	end
 	self.__index = self
 	fields =  setmetatable(fields, self)
 	fields:generate(seed)
@@ -20,9 +25,11 @@ end
 
 function World:generate(seed)
 	local h,t,m,f,fd=love.math.random(seed),love.math.random(seed),love.math.random(seed),love.math.random(seed),love.math.random(seed)
-	local map = {}
+	local bmap = {}
+	local emap = {}
 	for x=0,MAP_SIZE-1 do
-		map[x] = {}
+		bmap[x] = {}
+		emap[x] = {}
 		for y=0,MAP_SIZE-1 do
 			local tile = {
 				height=noise(x/HEIGHT_SCALE,y/HEIGHT_SCALE,h,5,2,0.5) * edge(x,y),
@@ -31,10 +38,13 @@ function World:generate(seed)
 				temp=noise(x/TEMP_SCALE,y/TEMP_SCALE,t,3,2,0.5),
 				food=noise(x/FOOD_SCALE,y/FOOD_SCALE,fd,10,2,0.75)
 			}
-			map[x][y] = biome(tile)
+			local data = biome(tile)
+			bmap[x][y] = data.biome
+			emap[x][y] = data.entity
 		end
 	end
-	self.map = map
+	self.bmap = bmap
+	self.emap = emap
 end
 
 function World:draw(tranX, tranY)
@@ -42,10 +52,9 @@ function World:draw(tranX, tranY)
 		for y=0,math.ceil(love.graphics.getHeight()/TILE_SIZE) do
 			local xx,yy = tranX+x,tranY+y
 			if xx >= 0 and xx < MAP_SIZE and yy >= 0 and yy < MAP_SIZE then
-				if (not self.map[xx][yy]) then print(xx,yy) end
-				love.graphics.draw(self.map[xx][yy].biome.tile, TILE_SIZE*x, TILE_SIZE*y, 0, TILE_SIZE/16, TILE_SIZE/16)
-				if self.map[xx][yy].entity then
-					love.graphics.draw(self.map[xx][yy].entity.tile, TILE_SIZE*x, TILE_SIZE*y, 0, TILE_SIZE/16, TILE_SIZE/16)
+				love.graphics.draw(self.bmap[xx][yy].tile, TILE_SIZE*x, TILE_SIZE*y, 0, TILE_SIZE/16, TILE_SIZE/16)
+				if self.emap[xx][yy] then
+					love.graphics.draw(self.emap[xx][yy].tile, TILE_SIZE*x, TILE_SIZE*y, 0, TILE_SIZE/16, TILE_SIZE/16)
 				end
 			end
 		end
@@ -54,14 +63,10 @@ end
 
 function World:update(dt)
 	self.t = self.t + dt
-	if self.t > 0.5 then
-		self.t = 0
-		for x=0,MAP_SIZE-1 do
-			for y=0,MAP_SIZE-1 do
-				if self.map[x][y].entity then
-					self.map[x][y].entity:step(x,y)
-				end
-			end
+	while self.t > STEP_SIZE do
+		self.t = self.t - STEP_SIZE
+		for _,system in ipairs(self.systems) do
+			system:step(self)
 		end
 	end
 end
@@ -70,7 +75,7 @@ function World:biomeAt(x,y)
 	if x < 0 or x >= MAP_SIZE or y < 0 or y >= MAP_SIZE then
 		return biomes.water
 	else
-		return self.map[x][y].biome
+		return self.bmap[x][y]
 	end
 end
 
@@ -78,7 +83,7 @@ function World:entityAt(x,y)
 	if x < 0 or x >= MAP_SIZE or y < 0 or y >= MAP_SIZE then
 		return nil
 	else
-		return self.map[x][y].entity
+		return self.emap[x][y]
 	end
 end
 
@@ -86,7 +91,7 @@ function World:setBiomeAt(x,y,biome)
 	if x < 0 or x >= MAP_SIZE or y < 0 or y >= MAP_SIZE then
 		return false
 	else
-		self.map[x][y].biome = biome
+		self.bmap[x][y] = biome
 		return true
 	end
 end
@@ -95,9 +100,26 @@ function World:setEntityAt(x,y,entity)
 	if x < 0 or x >= MAP_SIZE or y < 0 or y >= MAP_SIZE then
 		return false
 	else
-		self.map[x][y].entity = entity
+		self.emap[x][y] = entity
 		return true
 	end
+end
+
+function World:collisionMap()
+	local map = {}
+	for y=0,MAP_SIZE-1 do
+		map[y+1] = {}
+		for x=0,MAP_SIZE-1 do
+			map[y+1][x+1] = 0
+			if self.bmap[x][y] == biomes.water then
+				map[y+1][x+1] = 1
+			end
+			if self.emap[x][y] then
+				map[y+1][x+1] = 1
+			end
+		end
+	end
+	return map
 end
 
 function edge(x,y)

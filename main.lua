@@ -24,7 +24,7 @@ end
 
 function love.mousepressed(x,y,button)
 	local tx,ty = mouseToTile(x,y)
-	world.map[tx][ty].entity = Entity:new(world, cim):addComponent(WanderComponent:new())
+	world.emap[tx][ty] = Entity:new(world, cim):addComponent("moveable", {current={x=tx,y=ty}}):addComponent("pathfind")
 end
 
 function love.update(dt)
@@ -50,6 +50,8 @@ function love.draw()
 	world:draw(tranX,tranY)
 	local tx,ty = math.floor(love.mouse.getX()/TILE_SIZE),math.floor(love.mouse.getY()/TILE_SIZE)
 	love.graphics.rectangle("line",TILE_SIZE*tx,TILE_SIZE*ty,TILE_SIZE,TILE_SIZE)
+	local mx,my = mouseToTile(love.mouse.getX(),love.mouse.getY())
+	love.graphics.print(mx.." "..my)
 end
 
 function mouseToTile(mx, my)
