@@ -1,3 +1,5 @@
+require "entity"
+
 MAP_SIZE = 1000
 HEIGHT_SCALE = 100
 FOREST_SCALE = 10
@@ -9,7 +11,7 @@ TILE_SIZE = 64
 World = {}
 
 function World:new(seed)
-	local fields = {map=nil} --just there for documentation really
+	local fields = {map=nil, t=0} --just there for documentation really
 	self.__index = self
 	fields =  setmetatable(fields, self)
 	fields:generate(seed)
@@ -41,12 +43,60 @@ function World:draw(tranX, tranY)
 			local xx,yy = tranX+x,tranY+y
 			if xx >= 0 and xx < MAP_SIZE and yy >= 0 and yy < MAP_SIZE then
 				if (not self.map[xx][yy]) then print(xx,yy) end
-				love.graphics.draw(self.map[xx][yy].biome.tile, TILE_SIZE*(x-1), TILE_SIZE*(y-1), 0, TILE_SIZE/16, TILE_SIZE/16)
-				if self.map[xx][yy].item then
-					love.graphics.draw(self.map[xx][yy].item.tile, TILE_SIZE*(x-1), TILE_SIZE*(y-1), 0, TILE_SIZE/16, TILE_SIZE/16)
+				love.graphics.draw(self.map[xx][yy].biome.tile, TILE_SIZE*x, TILE_SIZE*y, 0, TILE_SIZE/16, TILE_SIZE/16)
+				if self.map[xx][yy].entity then
+					love.graphics.draw(self.map[xx][yy].entity.tile, TILE_SIZE*x, TILE_SIZE*y, 0, TILE_SIZE/16, TILE_SIZE/16)
 				end
 			end
 		end
+	end
+end
+
+function World:update(dt)
+	self.t = self.t + dt
+	if self.t > 0.5 then
+		self.t = 0
+		for x=0,MAP_SIZE-1 do
+			for y=0,MAP_SIZE-1 do
+				if self.map[x][y].entity then
+					self.map[x][y].entity:step(x,y)
+				end
+			end
+		end
+	end
+end
+
+function World:biomeAt(x,y)
+	if x < 0 or x >= MAP_SIZE or y < 0 or y >= MAP_SIZE then
+		return biomes.water
+	else
+		return self.map[x][y].biome
+	end
+end
+
+function World:entityAt(x,y)
+	if x < 0 or x >= MAP_SIZE or y < 0 or y >= MAP_SIZE then
+		return nil
+	else
+		return self.map[x][y].entity
+	end
+end
+
+function World:setBiomeAt(x,y,biome)
+	if x < 0 or x >= MAP_SIZE or y < 0 or y >= MAP_SIZE then
+		return false
+	else
+		self.map[x][y].biome = biome
+		return true
+	end
+end
+
+function World:setEntityAt(x,y,entity)
+	if x < 0 or x >= MAP_SIZE or y < 0 or y >= MAP_SIZE then
+		return false
+	else
+		self.map[x][y].entity = entity
+		return true
 	end
 end
 
@@ -69,25 +119,29 @@ end
 
 function biome(tile)
 	if tile.height < 0.4 then
-		return {biome=biomes.water,item=nil}
+		return {biome=biomes.water,entity=nil}
 	else
 		if tile.moisture < 0.4 then
-			return {biome=biomes.desert,item=nil}
+			if tile.moisture > 0.35 and tile.forest > 0.4 then
+				return {biome=biomes.desert,entity=nil}
+			else
+				return {biome=biomes.desert,entity=nil}
+			end
 		else
 			if tile.moisture > 0.6 then
 				if tile.forest > 0.4 then
-					return {biome=biomes.jungle,item=items.jungle_tree}
+					return {biome=biomes.jungle,entity=entitys.jungle_tree()}
 				else
-					return {biome=biomes.water,item=nil}
+					return {biome=biomes.water,entity=nil}
 				end
 			else
 				if tile.forest > 0.55 then
-					return {biome=biomes.forest,item=items.forest_tree}
+					return {biome=biomes.forest,entity=entitys.forest_tree()}
 				else
 					if tile.food > 0.6 then
-						return {biome=biomes.plains, item=items.berry_bush}
+						return {biome=biomes.plains, entity=entitys.berry_bush()}
 					else
-						return {biome=biomes.plains, item=nil}
+						return {biome=biomes.plains, entity=nil}
 					end
 				end
 			end
@@ -103,14 +157,6 @@ function Biome:new(name, tile)
 	return setmetatable(fields, self)
 end
 
-Item = {}
-
-function Item:new(name, tile)
-	local fields = {tile=tile}
-	self.__index = self
-	return setmetatable(fields, self)
-end
-
 biomes = {
 	water=Biome:new("Ocean", water),
 	forest=Biome:new("Forest", grass),
@@ -119,8 +165,8 @@ biomes = {
 	jungle=Biome:new("Jungle", underbrush),
 }
 
-items = {
-	jungle_tree=Item:new("Jungle Tree", jungle_tree),
-	forest_tree=Item:new("Forest Tree", forest_tree),
-	berry_bush=Item:new("Berry Bush", berry_bush),
+entitys = {
+	jungle_tree=function() return Entity:new(world, jungle_tree) end,
+	forest_tree=function() return Entity:new(world, forest_tree) end,
+	berry_bush=function() return Entity:new(world, berry_bush) end,
 }

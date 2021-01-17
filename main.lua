@@ -1,6 +1,9 @@
 require "noise"
 require "textures"
+require "entity"
 require "world"
+require "system"
+require "component"
 
 
 function love.load()
@@ -20,6 +23,8 @@ function love.wheelmoved(x, y)
 end
 
 function love.mousepressed(x,y,button)
+	local tx,ty = mouseToTile(x,y)
+	world.map[tx][ty].entity = Entity:new(world, cim):addComponent(WanderComponent:new())
 end
 
 function love.update(dt)
@@ -38,8 +43,15 @@ function love.update(dt)
 	end
 	tranX = math.min(math.max(tranX,0),MAP_SIZE-math.ceil(love.graphics.getWidth()/TILE_SIZE)-1)
 	tranY = math.min(math.max(tranY,0),MAP_SIZE-math.ceil(love.graphics.getHeight()/TILE_SIZE)-1)
+	world:update(dt)
 end
 
 function love.draw()
 	world:draw(tranX,tranY)
+	local tx,ty = math.floor(love.mouse.getX()/TILE_SIZE),math.floor(love.mouse.getY()/TILE_SIZE)
+	love.graphics.rectangle("line",TILE_SIZE*tx,TILE_SIZE*ty,TILE_SIZE,TILE_SIZE)
+end
+
+function mouseToTile(mx, my)
+	return tranX+math.floor(mx/TILE_SIZE),tranY+math.floor(my/TILE_SIZE)
 end
