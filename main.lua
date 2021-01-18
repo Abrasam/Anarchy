@@ -23,7 +23,7 @@ function love.keypressed(key)
 end
 
 function love.wheelmoved(x, y)
-	TILE_SIZE = math.min(128, math.max(16,TILE_SIZE + 4*y))
+	TILE_SIZE = math.min(128, math.max(12,TILE_SIZE + 4*y))
 end
 
 function love.mousepressed(x,y,button)
