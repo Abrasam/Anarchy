@@ -169,10 +169,14 @@ function biome(tile)
 			end
 		else
 			if tile.moisture > 0.6 then
-				if tile.forest > 0.4 then
+				if tile.forest > 0.42 then
 					return {biome=biomes.jungle,entity=entitys.jungle_tree()}
 				else
-					return {biome=biomes.water,entity=nil}
+					if tile.moisture > 0.65 then
+						return {biome=biomes.water,entity=nil}
+					else
+						return {biome=biomes.jungle,entity=nil}
+					end
 				end
 			else
 				if tile.forest > 0.55 then

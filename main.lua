@@ -7,7 +7,7 @@ require "component"
 
 
 function love.load()
-	tranX,tranY = 0,0
+	tranX,tranY = math.floor(MAP_SIZE/2),math.floor(MAP_SIZE/2)
 	world = World:new(love.math.random(100000))
 
 	local td = love.filesystem.read("pathfind.lua")
@@ -24,7 +24,6 @@ end
 
 function love.wheelmoved(x, y)
 	TILE_SIZE = math.min(128, math.max(16,TILE_SIZE + 4*y))
-	
 end
 
 function love.mousepressed(x,y,button)
