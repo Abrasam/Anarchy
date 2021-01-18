@@ -14,7 +14,7 @@ while true do
 	local dt = t2 - t
 	t = t2
 	timer = timer + dt
-	if timer > 1 then
+	if timer > 0.1 then
 		timer = 0
 		local tab = inp:demand()
 		local tx,ty,map,x,y,ch = math.floor(tab.tx),math.floor(tab.ty),tab.map,tab.x,tab.y,tab.ch

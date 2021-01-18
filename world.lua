@@ -1,6 +1,9 @@
 require "entity"
 require "component"
 
+Grid = require "jumper.grid"
+Pathfinder = require "jumper.pathfinder"
+
 MAP_SIZE = 1000
 HEIGHT_SCALE = 100
 FOREST_SCALE = 10
@@ -13,13 +16,15 @@ STEP_SIZE = 1
 World = {}
 
 function World:new(seed)
-	local fields = {biomeMap={}, entityMap={}, systems={MoveableSystem:new(),PathfindSystem:new(),RandomWalkSystem:new()}, components={}, t=0}
+	local fields = {bmap={}, emap={}, cmap={}, systems={MoveableSystem:new(),PathfindSystem:new(),RandomWalkSystem:new()}, components={}, t=0}
 	for _,component in ipairs(components) do
 		fields.components[component] = {}
 	end
 	self.__index = self
 	fields =  setmetatable(fields, self)
 	fields:generate(seed)
+	fields.grid = Grid(fields.cmap)
+	fields.pathfinder = Pathfinder(fields.grid, 'JPS', 0)
 	return fields
 end
 
@@ -45,6 +50,20 @@ function World:generate(seed)
 	end
 	self.bmap = bmap
 	self.emap = emap
+	local cmap = {}
+	for y=0,MAP_SIZE-1 do
+		cmap[y+1] = {}
+		for x=0,MAP_SIZE-1 do
+			cmap[y+1][x+1] = 0
+			if self.bmap[x][y] == biomes.water then
+				cmap[y+1][x+1] = 1
+			end
+			if self.emap[x][y] then
+				cmap[y+1][x+1] = 1
+			end
+		end
+	end
+	self.cmap = cmap
 end
 
 function World:draw(tranX, tranY)
@@ -92,6 +111,7 @@ function World:setBiomeAt(x,y,biome)
 		return false
 	else
 		self.bmap[x][y] = biome
+		self:updateCollisions(x,y)
 		return true
 	end
 end
@@ -101,24 +121,22 @@ function World:setEntityAt(x,y,entity)
 		return false
 	else
 		self.emap[x][y] = entity
+		self:updateCollisions(x,y)
 		return true
 	end
 end
 
-function World:collisionMap()
-	local map = {}
-	for y=0,MAP_SIZE-1 do
-		map[y+1] = {}
-		for x=0,MAP_SIZE-1 do
-			map[y+1][x+1] = 0
-			if self.bmap[x][y] == biomes.water then
-				map[y+1][x+1] = 1
-			end
-			if self.emap[x][y] then
-				map[y+1][x+1] = 1
-			end
-		end
+function World:updateCollisions(x,y)
+	self.cmap[y+1][x+1] = 0
+	if self.bmap[x][y] == biomes.water then
+		self.cmap[y+1][x+1] = 1
 	end
+	if self.emap[x][y] then
+		self.cmap[y+1][x+1] = 1
+	end
+end
+
+function World:collisionMap()
 	return self.cmap
 end
 

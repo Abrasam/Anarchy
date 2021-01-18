@@ -46,7 +46,7 @@ function PathfindSystem:step(world)
 			if mov.state.current.x == component.state.target.x and mov.state.current.y == component.state.target.y then
 				component.state.target = nil
 			end
-			if component.state.waiting then
+			--[[if component.state.waiting then
 				while component.state.channel:getCount() > 0 do
 					component.state.waiting = nil
 					component.state.path = component.state.channel:pop()
@@ -60,6 +60,17 @@ function PathfindSystem:step(world)
 				component.state.waiting = true
 				pathfinder:push({tx=component.state.target.x,ty=component.state.target.y,map=world:collisionMap(),x=mov.state.current.x,y=mov.state.current.y,ch=component.state.channel})
 				--print("new path", component.state.target.x, component.state.target.y)
+			end]]
+			local path = world.pathfinder:getPath(mov.state.current.x+1, mov.state.current.y+1, component.state.target.x+1, component.state.target.y+1)
+			
+			if not path or #path == 0 then
+				component.state.path = nil
+				component.state.target = nil
+			else
+				component.state.path = {}
+				for node, _ in path:nodes() do
+					table.insert(component.state.path, {x=node.x-1, y=node.y-1})
+				end
 			end
 		end
 		if component.state.path then
