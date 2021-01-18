@@ -119,7 +119,7 @@ function World:collisionMap()
 			end
 		end
 	end
-	return map
+	return self.cmap
 end
 
 function edge(x,y)

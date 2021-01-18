@@ -9,6 +9,11 @@ require "component"
 function love.load()
 	tranX,tranY = 0,0
 	world = World:new(love.math.random(100000))
+
+	local td = love.filesystem.read("pathfind.lua")
+	paththread = love.thread.newThread(td)
+	pathfinder = love.thread.newChannel()
+	paththread:start(pathfinder)
 end
 
 function love.resize(w, h)
