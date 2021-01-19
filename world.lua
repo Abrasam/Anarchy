@@ -207,6 +207,7 @@ biomes = {
 	plains=Biome:new("Plains", grass),
 	desert=Biome:new("Desert", sand),
 	jungle=Biome:new("Jungle", underbrush),
+	farm=Biome:new("farm", farmland)
 }
 
 entitys = {

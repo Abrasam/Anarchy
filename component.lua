@@ -13,6 +13,7 @@ function Component:step()
 end
 
 components = {
+	"position",
 	"moveable",
 	"pathfind"
 }

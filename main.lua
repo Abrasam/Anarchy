@@ -1,4 +1,5 @@
 require "noise"
+require "util"
 require "textures"
 require "entity"
 require "world"
@@ -14,12 +15,26 @@ function love.load()
 	paththread = love.thread.newThread(td)
 	pathfinder = love.thread.newChannel()
 	paththread:start(pathfinder)
+
+	add = 1
 end
 
 function love.resize(w, h)
 end
 
 function love.keypressed(key)
+	if key == "right" then
+		add = add + 1
+		if add > realSize(entity_factories) then
+			add = 1
+		end
+	end
+	if key == "left" then
+		add = add - 1
+		if add < 1 then
+			add = realSize(entity_factories)
+		end
+	end
 end
 
 function love.wheelmoved(x, y)
@@ -28,7 +43,12 @@ end
 
 function love.mousepressed(x,y,button)
 	local tx,ty = mouseToTile(x,y)
-	world.emap[tx][ty] = Entity:new(world, cim):addComponent("moveable", {current={x=tx,y=ty}}):addComponent("pathfind")
+	if button == 1 then
+		local entity = entity_factories[add].func(world,tx,ty)
+		world:setEntityAt(tx,ty,entity)
+	elseif button == 2 then
+		world:setEntityAt(tx,ty,nil)
+	end
 end
 
 function love.update(dt)
@@ -56,6 +76,8 @@ function love.draw()
 	love.graphics.rectangle("line",TILE_SIZE*tx,TILE_SIZE*ty,TILE_SIZE,TILE_SIZE)
 	local mx,my = mouseToTile(love.mouse.getX(),love.mouse.getY())
 	love.graphics.print(mx.." "..my)
+	love.graphics.print(entity_factories[add].name, love.graphics.getWidth()-256)
+	love.graphics.draw(entity_factories[add].tile, (love.graphics.getWidth()-128), 10, 0, 128/16, 128/16)
 end
 
 function mouseToTile(mx, my)
