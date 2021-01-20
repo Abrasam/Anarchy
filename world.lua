@@ -16,7 +16,7 @@ STEP_SIZE = 0.25
 World = {}
 
 function World:new(seed)
-	local fields = {bmap={}, emap={}, cmap={}, systems={MoveableSystem:new(),PathfindSystem:new(),RandomWalkSystem:new()}, components={}, t=0}
+	local fields = {bmap={}, emap={}, fmap={}, cmap={}, systems={MoveableSystem:new(),PathfindSystem:new(),RandomWalkSystem:new()}, components={}, t=0}
 	for _,component in ipairs(components) do
 		fields.components[component] = {}
 	end
@@ -32,9 +32,11 @@ function World:generate(seed)
 	local h,t,m,f,fd=love.math.random(seed),love.math.random(seed),love.math.random(seed),love.math.random(seed),love.math.random(seed)
 	local bmap = {}
 	local emap = {}
+	local fmap = {}
 	for x=0,MAP_SIZE-1 do
 		bmap[x] = {}
 		emap[x] = {}
+		fmap[x] = {}
 		for y=0,MAP_SIZE-1 do
 			local tile = {
 				height=noise(x/HEIGHT_SCALE,y/HEIGHT_SCALE,h,5,2,0.5) * edge(x,y),
@@ -45,25 +47,20 @@ function World:generate(seed)
 			}
 			local data = biome(tile)
 			bmap[x][y] = data.biome
-			emap[x][y] = data.entity
+			fmap[x][y] = data.entity and data.entity(self,x,y) or nil
 		end
 	end
 	self.bmap = bmap
 	self.emap = emap
-	local cmap = {}
+	self.fmap = fmap
+	self.cmap = {}
 	for y=0,MAP_SIZE-1 do
-		cmap[y+1] = {}
+		self.cmap[y+1] = {}
 		for x=0,MAP_SIZE-1 do
-			cmap[y+1][x+1] = 0
-			if self.bmap[x][y] == biomes.water then
-				cmap[y+1][x+1] = 1
-			end
-			if self.emap[x][y] then
-				cmap[y+1][x+1] = 1
-			end
+			self:updateCollisions(x,y)
 		end
 	end
-	self.cmap = cmap
+	
 end
 
 function World:draw(tranX, tranY)
@@ -74,6 +71,9 @@ function World:draw(tranX, tranY)
 				love.graphics.draw(self.bmap[xx][yy].tile, TILE_SIZE*x, TILE_SIZE*y, 0, TILE_SIZE/16, TILE_SIZE/16)
 				if self.emap[xx][yy] then
 					love.graphics.draw(self.emap[xx][yy].tile, TILE_SIZE*x, TILE_SIZE*y, 0, TILE_SIZE/16, TILE_SIZE/16)
+				end
+				if self.fmap[xx][yy] then
+					love.graphics.draw(self.fmap[xx][yy].tile, TILE_SIZE*x, TILE_SIZE*y, 0, TILE_SIZE/16, TILE_SIZE/16)
 				end
 			end
 		end
@@ -106,6 +106,14 @@ function World:entityAt(x,y)
 	end
 end
 
+function World:featureAt(x,y)
+	if x < 0 or x >= MAP_SIZE or y < 0 or y >= MAP_SIZE then
+		return nil
+	else
+		return self.fmap[x][y]
+	end
+end
+
 function World:setBiomeAt(x,y,biome)
 	if x < 0 or x >= MAP_SIZE or y < 0 or y >= MAP_SIZE then
 		return false
@@ -126,6 +134,16 @@ function World:setEntityAt(x,y,entity)
 	end
 end
 
+function World:setFeatureAt(x,y,feature)
+	if x < 0 or x >= MAP_SIZE or y < 0 or y >= MAP_SIZE then
+		return false
+	else
+		self.fmap[x][y] = feature
+		self:updateCollisions(x,y)
+		return true
+	end
+end
+
 function World:updateCollisions(x,y)
 	self.cmap[y+1][x+1] = 0
 	if self.bmap[x][y] == biomes.water then
@@ -134,6 +152,13 @@ function World:updateCollisions(x,y)
 	if self.emap[x][y] then
 		self.cmap[y+1][x+1] = 1
 	end
+	if self.fmap[x][y] and self.components["collide"][self.fmap[x][y]] then
+		self.cmap[y+1][x+1] = 1
+	end
+end
+
+function World:collidesAt(x,y)
+	return self.cmap[x][y] == 1
 end
 
 function World:collisionMap()
@@ -170,7 +195,7 @@ function biome(tile)
 		else
 			if tile.moisture > 0.6 then
 				if tile.forest > 0.42 then
-					return {biome=biomes.jungle,entity=entitys.jungle_tree()}
+					return {biome=biomes.jungle,entity=entity_factories["Jungle Tree"]}
 				else
 					if tile.moisture > 0.65 then
 						return {biome=biomes.water,entity=nil}
@@ -180,10 +205,10 @@ function biome(tile)
 				end
 			else
 				if tile.forest > 0.55 then
-					return {biome=biomes.forest,entity=entitys.forest_tree()}
+					return {biome=biomes.forest,entity=entity_factories["Forest Tree"]}
 				else
 					if tile.food > 0.6 then
-						return {biome=biomes.plains, entity=entitys.berry_bush()}
+						return {biome=biomes.plains, entity=entity_factories["Berry Bush"]}
 					else
 						return {biome=biomes.plains, entity=nil}
 					end
@@ -208,10 +233,4 @@ biomes = {
 	desert=Biome:new("Desert", sand),
 	jungle=Biome:new("Jungle", underbrush),
 	farm=Biome:new("farm", farmland)
-}
-
-entitys = {
-	jungle_tree=function() return Entity:new(world, jungle_tree) end,
-	forest_tree=function() return Entity:new(world, forest_tree) end,
-	berry_bush=function() return Entity:new(world, berry_bush) end,
 }

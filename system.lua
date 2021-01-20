@@ -19,13 +19,13 @@ end
 function MoveableSystem:step(world)
 	for entity,component in pairs(world.components["moveable"]) do
 		local pos = world.components["position"][entity]
-		if component.state.next then
-			if world:biomeAt(component.state.next.x, component.state.next.y) ~= biomes.water and not world:entityAt(component.state.next.x, component.state.next.y) then
-				world:setEntityAt(pos.state.x, pos.state.y, nil)
-				world:setEntityAt(component.state.next.x, component.state.next.y, entity)
-				pos.state.x = component.state.next.x
-				pos.state.y = component.state.next.y
-				component.state.next = nil
+		if component.next then
+			if world:biomeAt(component.next.x, component.next.y) ~= biomes.water and not world:entityAt(component.next.x, component.next.y) then
+				world:setEntityAt(pos.x, pos.y, nil)
+				world:setEntityAt(component.next.x, component.next.y, entity)
+				pos.x = component.next.x
+				pos.y = component.next.y
+				component.next = nil
 			end
 		end
 	end
@@ -41,53 +41,53 @@ function PathfindSystem:step(world)
 	for entity,component in pairs(world.components["pathfind"]) do
 		local mov = world.components["moveable"][entity]
 		local pos = world.components["position"][entity]
-		if component.state.target and not component.state.path then
-			if pos.state.x == component.state.target.x and pos.state.y == component.state.target.y then
-				component.state.target = nil
+		if component.target and not component.path then
+			if pos.x == component.target.x and pos.y == component.target.y then
+				component.target = nil
 			end
-			--[[if component.state.waiting then
-				while component.state.channel:getCount() > 0 do
-					component.state.waiting = nil
-					component.state.path = component.state.channel:pop()
-					if #component.state.path == 0 then
-						component.state.path = nil
-						component.state.target = nil
+			--[[if component.waiting then
+				while component.channel:getCount() > 0 do
+					component.waiting = nil
+					component.path = component.channel:pop()
+					if #component.path == 0 then
+						component.path = nil
+						component.target = nil
 					end
 				end
 			else
-				component.state.channel = love.thread.newChannel()
-				component.state.waiting = true
-				pathfinder:push({tx=component.state.target.x,ty=component.state.target.y,map=world:collisionMap(),x=pos.state.x,y=pos.state.y,ch=component.state.channel})
-				--print("new path", component.state.target.x, component.state.target.y)
+				component.channel = love.thread.newChannel()
+				component.waiting = true
+				pathfinder:push({tx=component.target.x,ty=component.target.y,map=world:collisionMap(),x=pos.x,y=pos.y,ch=component.channel})
+				--print("new path", component.target.x, component.target.y)
 			end]]
-			local path = world.pathfinder:getPath(pos.state.x+1, pos.state.y+1, component.state.target.x+1, component.state.target.y+1)
+			local path = world.pathfinder:getPath(pos.x+1, pos.y+1, component.target.x+1, component.target.y+1)
 			
 			if not path or #path == 0 then
-				component.state.path = nil
-				component.state.target = nil
+				component.path = nil
+				component.target = nil
 			else
-				component.state.path = {}
+				component.path = {}
 				for node, _ in path:nodes() do
-					table.insert(component.state.path, {x=node.x-1, y=node.y-1})
+					table.insert(component.path, {x=node.x-1, y=node.y-1})
 				end
 			end
 		end
-		if component.state.path then
-			while #component.state.path > 0 and component.state.path[1].x == pos.state.x and component.state.path[1].y == pos.state.y do
-				table.remove(component.state.path, 1)
+		if component.path then
+			while #component.path > 0 and component.path[1].x == pos.x and component.path[1].y == pos.y do
+				table.remove(component.path, 1)
 			end
-			if #component.state.path > 0 and not mov.state.next then
-				local nxt = component.state.path[1]
+			if #component.path > 0 and not mov.next then
+				local nxt = component.path[1]
 				local diff = {
-					x=nxt.x-pos.state.x > 0 and 1 or (nxt.x-pos.state.x < 0 and -1 or 0),
-					y=nxt.y-pos.state.y > 0 and 1 or (nxt.y-pos.state.y < 0 and -1 or 0)
+					x=nxt.x-pos.x > 0 and 1 or (nxt.x-pos.x < 0 and -1 or 0),
+					y=nxt.y-pos.y > 0 and 1 or (nxt.y-pos.y < 0 and -1 or 0)
 				}
-				mov.state.next = {x=pos.state.x+diff.x,y=pos.state.y+diff.y}
+				mov.next = {x=pos.x+diff.x,y=pos.y+diff.y}
 			else
-				mov.state.next = nil
-				component.state.path = nil
-				if world:entityAt(component.state.target.x, component.state.target.y) then
-					component.state.target = nil
+				mov.next = nil
+				component.path = nil
+				if world:entityAt(component.target.x, component.target.y) then
+					component.target = nil
 				end
 			end
 		end
@@ -104,8 +104,8 @@ function RandomWalkSystem:step(world)
 	for entity,component in pairs(world.components["pathfind"]) do
 		local mov = world.components["moveable"][entity]
 		local pos = world.components["position"][entity]
-		while not component.state.target or world:biomeAt(component.state.target.x, component.state.target.y) == biomes.water or world:entityAt(component.state.target.x, component.state.target.y) do
-			component.state.target = {x=pos.state.x+love.math.random(-20,20),y=pos.state.y+love.math.random(-20,20)}
+		while not component.target or world:biomeAt(component.target.x, component.target.y) == biomes.water or world:entityAt(component.target.x, component.target.y) do
+			component.target = {x=pos.x+love.math.random(-20,20),y=pos.y+love.math.random(-20,20)}
 		end
 	end
 end

@@ -6,7 +6,6 @@ require "world"
 require "system"
 require "component"
 
-
 function love.load()
 	tranX,tranY = math.floor(MAP_SIZE/2),math.floor(MAP_SIZE/2)
 	world = World:new(love.math.random(100000))
@@ -25,14 +24,14 @@ end
 function love.keypressed(key)
 	if key == "right" then
 		add = add + 1
-		if add > realSize(entity_factories) then
+		if add > #entity_data then
 			add = 1
 		end
 	end
 	if key == "left" then
 		add = add - 1
 		if add < 1 then
-			add = realSize(entity_factories)
+			add = #entity_data
 		end
 	end
 end
@@ -44,10 +43,15 @@ end
 function love.mousepressed(x,y,button)
 	local tx,ty = mouseToTile(x,y)
 	if button == 1 then
-		local entity = entity_factories[add].func(world,tx,ty)
-		world:setEntityAt(tx,ty,entity)
+		if world:biomeAt(tx,ty) == biomes.water then return end
+		local entity = entity_data[add].func(world,tx,ty)
+		if entity_data[add].feature then
+			world:setFeatureAt(tx,ty,entity)
+		else
+			world:setEntityAt(tx,ty,entity)
+		end
 	elseif button == 2 then
-		world:setEntityAt(tx,ty,nil)
+		world:setFeatureAt(tx,ty,nil)
 	end
 end
 
@@ -76,8 +80,8 @@ function love.draw()
 	love.graphics.rectangle("line",TILE_SIZE*tx,TILE_SIZE*ty,TILE_SIZE,TILE_SIZE)
 	local mx,my = mouseToTile(love.mouse.getX(),love.mouse.getY())
 	love.graphics.print(mx.." "..my)
-	love.graphics.print(entity_factories[add].name, love.graphics.getWidth()-256)
-	love.graphics.draw(entity_factories[add].tile, (love.graphics.getWidth()-128), 10, 0, 128/16, 128/16)
+	love.graphics.print(entity_data[add].name, love.graphics.getWidth()-256)
+	love.graphics.draw(entity_data[add].tile, (love.graphics.getWidth()-128), 10, 0, 128/16, 128/16)
 end
 
 function mouseToTile(mx, my)

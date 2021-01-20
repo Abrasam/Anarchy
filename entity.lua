@@ -8,46 +8,57 @@ function Entity:new(world, tile)
 	return setmetatable(fields, self)
 end
 
-function Entity:addComponent(component, initial)
-	self.world.components[component][self] = Component:new(initial)
+function Entity:addComponent(component)
+	self.world.components[component.name][self] = component
 	return self
 end
 
 
-entity_factories = {
+entity_data = {
 	{
-		func=function (world,x,y) return Entity:new(world,cim):addComponent("position", {x=x,y=y}):addComponent("moveable"):addComponent("pathfind") end,
+		func=function (world,x,y) return Entity:new(world,cim):addComponent(PositionComponent:new(x,y)):addComponent(MoveableComponent:new()):addComponent(PathfindComponent:new()) end,
 		name="Cim",
-		tile=cim
+		tile=cim,
 	},
 	{
-		func=function (world,x,y) return Entity:new(world,farm_empty):addComponent("position", {x=x,y=y}) end,
+		func=function (world,x,y) return Entity:new(world,farm_empty):addComponent(PositionComponent:new(x,y)) end,
 		name="Empty Farm",
-		tile=farm_empty
+		tile=farm_empty,
+		feature=true
 	},
 	{
-		func=function (world,x,y) return Entity:new(world,farm_wheat_seeds):addComponent("position", {x=x,y=y}) end,
+		func=function (world,x,y) return Entity:new(world,farm_wheat_seeds):addComponent(PositionComponent:new(x,y)) end,
 		name="Seeded Wheat Farm",
-		tile=farm_wheat_seeds
+		tile=farm_wheat_seeds,
+		feature=true
 	},
 	{
-		func=function (world,x,y) return Entity:new(world,farm_wheat_grown):addComponent("position", {x=x,y=y}) end,
+		func=function (world,x,y) return Entity:new(world,farm_wheat_grown):addComponent(PositionComponent:new(x,y)) end,
 		name="Grown Wheat Farm",
-		tile=farm_wheat_grown
+		tile=farm_wheat_grown,
+		feature=true
 	},
 	{
-		func=function (world,x,y) return Entity:new(world,wood_house):addComponent("position", {x=x,y=y}) end,
+		func=function (world,x,y) return Entity:new(world,wood_house):addComponent(PositionComponent:new(x,y)) end,
 		name="Wooden House",
-		tile=wood_house
+		tile=wood_house,
+		feature=true
 	},
 	{
-		func=function (world,x,y) return Entity:new(world,forest_tree):addComponent("position", {x=x,y=y}) end,
+		func=function (world,x,y) return Entity:new(world,forest_tree):addComponent(PositionComponent:new(x,y)) end,
 		name="Forest Tree",
-		tile=forest_tree
+		tile=forest_tree,
+		feature=true
 	},
 	{
-		func=function (world,x,y) return Entity:new(world,jungle_tree):addComponent("position", {x=x,y=y}) end,
+		func=function (world,x,y) return Entity:new(world,jungle_tree):addComponent(PositionComponent:new(x,y)):addComponent(Component:new("collide")) end,
 		name="Jungle Tree",
-		tile=jungle_tree
+		tile=jungle_tree,
+		feature=true
 	},
 }
+
+entity_factories = {}
+for _,ent in ipairs(entity_data) do
+	entity_factories[ent.name] = ent.func
+end
