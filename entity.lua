@@ -39,7 +39,7 @@ entity_data = {
 		feature=true
 	},
 	{
-		func=function (world,x,y) return Entity:new(world,wood_house):addComponent(PositionComponent:new(x,y)) end,
+		func=function (world,x,y) return Entity:new(world,wood_house):addComponent(PositionComponent:new(x,y)):addComponent(Component:new("collide")) end,
 		name="Wooden House",
 		tile=wood_house,
 		feature=true
@@ -56,6 +56,18 @@ entity_data = {
 		tile=jungle_tree,
 		feature=true
 	},
+	{
+		func=function (world,x,y) return Entity:new(world,dirt_road):addComponent(PositionComponent:new(x,y)) end,
+		name="Dirt Road",
+		tile=dirt_road,
+		feature=true
+	},
+	{
+		func=function (world,x,y) return Entity:new(world,stone_road):addComponent(PositionComponent:new(x,y)) end,
+		name="Stone Road",
+		tile=stone_road,
+		feature=true
+	}
 }
 
 entity_factories = {}
