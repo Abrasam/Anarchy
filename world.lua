@@ -69,11 +69,11 @@ function World:draw(tranX, tranY)
 			local xx,yy = tranX+x,tranY+y
 			if xx >= 0 and xx < MAP_SIZE and yy >= 0 and yy < MAP_SIZE then
 				love.graphics.draw(self.bmap[xx][yy].tile, TILE_SIZE*x, TILE_SIZE*y, 0, TILE_SIZE/16, TILE_SIZE/16)
-				if self.emap[xx][yy] then
-					love.graphics.draw(self.emap[xx][yy].tile, TILE_SIZE*x, TILE_SIZE*y, 0, TILE_SIZE/16, TILE_SIZE/16)
-				end
 				if self.fmap[xx][yy] then
 					love.graphics.draw(self.fmap[xx][yy].tile, TILE_SIZE*x, TILE_SIZE*y, 0, TILE_SIZE/16, TILE_SIZE/16)
+				end
+				if self.emap[xx][yy] then
+					love.graphics.draw(self.emap[xx][yy].tile, TILE_SIZE*x, TILE_SIZE*y, 0, TILE_SIZE/16, TILE_SIZE/16)
 				end
 			end
 		end
